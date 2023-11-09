@@ -32,9 +32,12 @@ class Context(Generic[TopContainer, BottomContainer]):
                  group_factory: FuncWithFixedArgType[TopContainer, BottomContainer],
                  n_groups: int,
                  top_container: TopContainer) -> None:
-        self._element_inserter = VectorPartial(inserter, n_args=n_elements + 1)
-        self._group_factory = VectorPartial(group_factory, n_args=n_groups + 1)
-        self._group_factory.insert(top_container, pos=1)
+        self._element_inserter = VectorPartial(inserter, n_args=n_elements+1)
+        self._group_factory = VectorPartial(group_factory, n_args=n_groups+1)
+        if not n_groups:
+            self._element_inserter.insert(top_container, pos=1)
+        else:
+            self._group_factory.insert(top_container, pos=1)
 
     def apply_element(self, e: Any, /, *, pos: int) -> None:
         """Apply the passed element to the function-inserter. Then if

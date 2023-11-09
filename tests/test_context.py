@@ -1,4 +1,5 @@
 from collections import Counter
+import random
 from typing import Any
 
 import pytest
@@ -6,15 +7,28 @@ import pytest
 from container_data_collector.context import Context
 
 
-def inserter(c: Counter[str], e: str, n: int) -> None:
-    c[e] += n
+def test_context_without_groups():
+    answer = [random.randint(-100, 100) for _ in range(10)]
+
+    result: list[int] = []
+    context = Context(
+        top_container=result,
+        inserter=lambda c, e: c.append(e), n_elements=1,
+        group_factory=lambda c: c, n_groups=0,
+    )
+
+    for e in answer:
+        context.apply_element(e, pos=1)
+    assert result == answer
 
 
-def group_factory(c: dict[str, Any], key_1: str, key_2: int) -> Counter[str]:
-    return c.setdefault(key_1, {}).setdefault(key_2, Counter[str]())
+def test_context_with_groups():
+    def inserter(c: Counter[str], e: str, n: int) -> None:
+        c[e] += n
 
+    def group_factory(c: dict[str, Any], key_1: str, key_2: int) -> Counter[str]:
+        return c.setdefault(key_1, {}).setdefault(key_2, Counter[str]())
 
-def test_context():
     answer = {
         "a": {
             1: Counter({"x": 2, "y": 1}),
@@ -26,7 +40,6 @@ def test_context():
     }
 
     result: dict[str, Any] = {}
-
     context = Context(
         top_container=result,
         inserter=inserter, n_elements=2,
