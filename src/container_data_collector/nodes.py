@@ -31,7 +31,7 @@ class Node(Protocol[Outer, Inner]):
 
 @dataclass(slots=True, eq=False, match_args=False)
 class RootNode(Generic[Outer, Inner]):
-    """Root node of the query tree."""
+    """Pseudo root node of the query tree."""
     next_nodes: list[Node[Outer, Inner]] = field(default_factory=list, init=False)
 
     def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
