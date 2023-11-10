@@ -117,7 +117,7 @@ class Include(Generic[Outer, Inner]):
     include: Container[Any] | None = field(default=None)
     validator: Callable[[Any], bool] | None = field(default=None)
 
-    def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
+    def process(self, obj: Any, _: Context[Outer, Inner]) -> State:
         if self.include is not None and obj not in self.include:
             return State.REJECT
         if self.validator is not None and not self.validator(obj):
@@ -138,7 +138,7 @@ class Exclude(Generic[Outer, Inner]):
     exclude: Container[Any] | None = field(default=None)
     invalidator: Callable[[Any], bool] | None = field(default=None)
 
-    def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
+    def process(self, obj: Any, _: Context[Outer, Inner]) -> State:
         if self.exclude is not None and obj in self.exclude:
             return State.REJECT
         if self.invalidator is not None and self.invalidator(obj):
