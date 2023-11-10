@@ -30,6 +30,24 @@ class Node(Protocol[Outer, Inner]):
 
 
 @dataclass(slots=True, eq=False, match_args=False)
+class RootNode(Generic[Outer, Inner]):
+    """Root node of the query tree."""
+    next_nodes: list[Node[Outer, Inner]] = field(default_factory=list, init=False)
+
+    def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
+        for node in self.next_nodes:
+            match node.process(obj, context):
+                case State.SUCCESS:
+                    continue
+                case State.REJECT as reject:
+                    return reject
+        return State.SUCCESS
+
+    def attach(self, *args: "Node[Outer, Inner]") -> None:
+        self.next_nodes.extend(args)
+
+
+@dataclass(slots=True, eq=False, match_args=False)
 class Element(Generic[Outer, Inner]):
     """Node that represents one of the elements collecting during tree traversal.
     Position tells the inserter function what position the element has in it.
@@ -145,7 +163,7 @@ class At(Generic[Outer, Inner]):
     a Mapping object, gets the value by key and propogates this value to
     the next nodes.
     """
-    next_nodes: tuple[Node[Outer, Inner], ...] = field(init=False)
+    next_nodes: list[Node[Outer, Inner]] = field(default_factory=list, init=False)
     key: Hashable
 
     def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
@@ -159,7 +177,7 @@ class At(Generic[Outer, Inner]):
         return State.SUCCESS
 
     def attach(self, *args: Node[Outer, Inner]) -> None:
-        self.next_nodes = args
+        self.next_nodes.extend(args)
 
 
 class KeyExistence(IntEnum):
@@ -177,7 +195,7 @@ class FromList(Generic[Outer, Inner]):
     gets the value by key, and then treats the value as an Iterable object, and
     so forth (see the previous way).
     """
-    next_nodes: tuple[Node[Outer, Inner], ...] = field(init=False)
+    next_nodes: list[Node[Outer, Inner]] = field(default_factory=list, init=False)
     key: Hashable | KeyExistence = field(default=KeyExistence.NONE)
 
     def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
@@ -189,4 +207,4 @@ class FromList(Generic[Outer, Inner]):
         return State.SUCCESS
 
     def attach(self, *args: Node[Outer, Inner]) -> None:
-        self.next_nodes = args
+        self.next_nodes.extend(args)
