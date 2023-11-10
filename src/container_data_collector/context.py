@@ -2,19 +2,17 @@
 
 from collections.abc import Hashable
 from dataclasses import dataclass
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic
 
+from container_data_collector.common_typevars import Inner, Outer
 from container_data_collector.vector_partial import (
     FuncWithFixedArgType,
     VectorPartial,
 )
 
 
-TopContainer = TypeVar("TopContainer")
-BottomContainer = TypeVar("BottomContainer")
-
 @dataclass(slots=True, eq=False, match_args=False)
-class Context(Generic[TopContainer, BottomContainer]):
+class Context(Generic[Outer, Inner]):
     """Structure that joins two functions:
       - an element inserter;
       - a group factory.
@@ -23,15 +21,15 @@ class Context(Generic[TopContainer, BottomContainer]):
     during tree traversal.
     """
 
-    _element_inserter: VectorPartial[BottomContainer, None]
-    _group_factory: VectorPartial[TopContainer, BottomContainer]
+    _element_inserter: VectorPartial[Inner, None]
+    _group_factory: VectorPartial[Outer, Inner]
 
     def __init__(self, /, *,
-                 inserter: FuncWithFixedArgType[BottomContainer, None],
+                 top_container: Outer,
+                 inserter: FuncWithFixedArgType[Inner, None],
                  n_elements: int,
-                 group_factory: FuncWithFixedArgType[TopContainer, BottomContainer],
-                 n_groups: int,
-                 top_container: TopContainer) -> None:
+                 group_factory: FuncWithFixedArgType[Outer, Inner],
+                 n_groups: int) -> None:
         self._element_inserter = VectorPartial(inserter, n_args=n_elements+1)
         self._group_factory = VectorPartial(group_factory, n_args=n_groups+1)
         if not n_groups:

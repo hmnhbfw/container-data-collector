@@ -3,8 +3,9 @@
 from collections.abc import Callable, Container, Hashable, Iterable
 from dataclasses import KW_ONLY, dataclass, field
 from enum import IntEnum, auto, unique
-from typing import Any, Generic, Protocol, TypeVar
+from typing import Any, Generic, Protocol
 
+from container_data_collector.common_typevars import Inner, Outer
 from container_data_collector.context import Context
 
 
@@ -15,16 +16,13 @@ class State(IntEnum):
     REJECT = auto()
 
 
-TopContainer = TypeVar("TopContainer")
-BottomContainer = TypeVar("BottomContainer")
-
-class Node(Protocol[TopContainer, BottomContainer]):
+class Node(Protocol[Outer, Inner]):
     """Atomic unit of the query tree. Each node takes an object processed by
     previous node and the current context to know how process this object.
     The result of the processing is some State, that can trigger some events
     in the previous node.
     """
-    def process(self, obj: Any, context: Context[TopContainer, BottomContainer]) -> State:
+    def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
         ...
 
 
@@ -59,16 +57,16 @@ _DATACLASS_KWARGS = {
 
 
 @dataclass(**_DATACLASS_KWARGS)
-class Element(Generic[TopContainer, BottomContainer]):
+class Element(Generic[Outer, Inner]):
     """Node that represents one of the elements collecting during tree traversal.
     Position tells the inserter function what position the element has in it.
     Next node may point to additional filters, e.g., can this element be used or not.
     """
     pos: int
     _: KW_ONLY
-    next_node: Node[TopContainer, BottomContainer] | None = field(default=None)
+    next_node: Node[Outer, Inner] | None = field(default=None)
 
-    def process(self, obj: Any, context: Context[TopContainer, BottomContainer]) -> State:
+    def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
         if self.next_node:
             match self.next_node.process(obj, context):
                 case State.SUCCESS:
@@ -81,7 +79,7 @@ class Element(Generic[TopContainer, BottomContainer]):
 
 
 @dataclass(**_DATACLASS_KWARGS)
-class Group(Generic[TopContainer, BottomContainer]):
+class Group(Generic[Outer, Inner]):
     """Node that represents one of the keys by which the elements will be grouped.
     Level tells what level of grouping this key is related. Factory tells how
     to make the key hashable if it is not. Next node may point to additional
@@ -90,9 +88,9 @@ class Group(Generic[TopContainer, BottomContainer]):
     level: int
     _: KW_ONLY
     factory: Callable[[Any], Hashable] | None = field(default=None)
-    next_node: Node[TopContainer, BottomContainer] | None = field(default=None)
+    next_node: Node[Outer, Inner] | None = field(default=None)
 
-    def process(self, obj: Any, context: Context[TopContainer, BottomContainer]) -> State:
+    def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
         if self.factory is not None:
             obj = self.factory(obj)
         if self.next_node:
@@ -107,7 +105,7 @@ class Group(Generic[TopContainer, BottomContainer]):
 
 
 @dataclass(**_DATACLASS_KWARGS, kw_only=True)
-class Include(Generic[TopContainer, BottomContainer]):
+class Include(Generic[Outer, Inner]):
     """Node that takes an object from the previous node and checks it.
     If it is not contained in the 'include' container or it doesn't pass
     the check of the 'validator' callable object, the whole branch until
@@ -119,7 +117,7 @@ class Include(Generic[TopContainer, BottomContainer]):
     include: Container[Any] | None = field(default=None)
     validator: Callable[[Any], bool] | None = field(default=None)
 
-    def process(self, obj: Any, context: Context[TopContainer, BottomContainer]) -> State:
+    def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
         if self.include is not None and obj not in self.include:
             return State.REJECT
         if self.validator is not None and not self.validator(obj):
@@ -128,7 +126,7 @@ class Include(Generic[TopContainer, BottomContainer]):
 
 
 @dataclass(**_DATACLASS_KWARGS, kw_only=True)
-class Exclude(Generic[TopContainer, BottomContainer]):
+class Exclude(Generic[Outer, Inner]):
     """Node that takes an object from the previous node and checks it.
     If it is contained in the 'exclude' container or it passes the check of
     the 'invalidator' callable object, the whole branch until the closest
@@ -140,7 +138,7 @@ class Exclude(Generic[TopContainer, BottomContainer]):
     exclude: Container[Any] | None = field(default=None)
     invalidator: Callable[[Any], bool] | None = field(default=None)
 
-    def process(self, obj: Any, context: Context[TopContainer, BottomContainer]) -> State:
+    def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
         if self.exclude is not None and obj in self.exclude:
             return State.REJECT
         if self.invalidator is not None and self.invalidator(obj):
@@ -149,15 +147,15 @@ class Exclude(Generic[TopContainer, BottomContainer]):
 
 
 @dataclass(**_DATACLASS_KWARGS, kw_only=True)
-class At(Generic[TopContainer, BottomContainer]):
+class At(Generic[Outer, Inner]):
     """Node that takes an object from the previous node and treats it as
     a Mapping object, gets the value by key and propogates this value to
     the next nodes.
     """
-    next_nodes: Iterable[Node[TopContainer, BottomContainer]]
+    next_nodes: Iterable[Node[Outer, Inner]]
     key: Hashable
 
-    def process(self, obj: Any, context: Context[TopContainer, BottomContainer]) -> State:
+    def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
         value = obj[self.key]
         for node in self.next_nodes:
             match node.process(value, context):
@@ -174,7 +172,7 @@ class KeyExistence(IntEnum):
 
 
 @dataclass(**_DATACLASS_KWARGS, kw_only=True)
-class FromList(Generic[TopContainer, BottomContainer]):
+class FromList(Generic[Outer, Inner]):
     """Node that takes an object from the previous node and treats it in two
     possible ways:
       - if there is no key, then the object is treated as an Iterable object,
@@ -183,10 +181,10 @@ class FromList(Generic[TopContainer, BottomContainer]):
     gets the value by key, and then treats the value as an Iterable object, and
     so forth (see the previous way).
     """
-    next_nodes: Iterable[Node[TopContainer, BottomContainer]]
+    next_nodes: Iterable[Node[Outer, Inner]]
     key: Hashable | KeyExistence = field(default=KeyExistence.NONE)
 
-    def process(self, obj: Any, context: Context[TopContainer, BottomContainer]) -> State:
+    def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
         if self.key is not KeyExistence.NONE:
             obj = obj[self.key]
         for value in obj:
