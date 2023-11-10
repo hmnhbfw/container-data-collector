@@ -1,6 +1,6 @@
 """Nodes of the query tree."""
 
-from collections.abc import Callable, Container, Hashable, Iterable
+from collections.abc import Callable, Container, Hashable
 from dataclasses import KW_ONLY, dataclass, field
 from enum import IntEnum, auto, unique
 from typing import Any, Generic, Protocol
@@ -37,7 +37,7 @@ class Element(Generic[Outer, Inner]):
     """
     pos: int
     _: KW_ONLY
-    next_node: Node[Outer, Inner] | None = field(default=None)
+    next_node: Node[Outer, Inner] | None = field(default=None, init=False)
 
     def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
         if self.next_node:
@@ -66,7 +66,7 @@ class Group(Generic[Outer, Inner]):
     level: int
     _: KW_ONLY
     factory: Callable[[Any], Hashable] | None = field(default=None)
-    next_node: Node[Outer, Inner] | None = field(default=None)
+    next_node: Node[Outer, Inner] | None = field(default=None, init=False)
 
     def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
         if self.factory is not None:
@@ -90,18 +90,18 @@ class Group(Generic[Outer, Inner]):
 @dataclass(slots=True, eq=False, match_args=False, kw_only=True)
 class Include(Generic[Outer, Inner]):
     """Node that takes an object from the previous node and checks it.
-    If it is not contained in the 'include' container or it doesn't pass
+    If it is not contained in the 'any_of' container or it doesn't pass
     the check of the 'validator' callable object, the whole branch until
     the closest FromList node will be rejected.
 
-    If both 'include' and 'validator' are not defined, the node processing
+    If both 'any_of' and 'validator' are not defined, the node processing
     has no effect.
     """
-    include: Container[Any] | None = field(default=None)
+    any_of: Container[Any] | None = field(default=None)
     validator: Callable[[Any], bool] | None = field(default=None)
 
-    def process(self, obj: Any, _: Context[Outer, Inner]) -> State:
-        if self.include is not None and obj not in self.include:
+    def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
+        if self.any_of is not None and obj not in self.any_of:
             return State.REJECT
         if self.validator is not None and not self.validator(obj):
             return State.REJECT
@@ -116,18 +116,18 @@ class Include(Generic[Outer, Inner]):
 @dataclass(slots=True, eq=False, match_args=False, kw_only=True)
 class Exclude(Generic[Outer, Inner]):
     """Node that takes an object from the previous node and checks it.
-    If it is contained in the 'exclude' container or it passes the check of
+    If it is contained in the 'any_of' container or it passes the check of
     the 'invalidator' callable object, the whole branch until the closest
     FromList node will be rejected.
 
-    If both 'exclude' and 'invalidator' are not defined, the node processing
+    If both 'any_of' and 'invalidator' are not defined, the node processing
     has no effect.
     """
-    exclude: Container[Any] | None = field(default=None)
+    any_of: Container[Any] | None = field(default=None)
     invalidator: Callable[[Any], bool] | None = field(default=None)
 
-    def process(self, obj: Any, _: Context[Outer, Inner]) -> State:
-        if self.exclude is not None and obj in self.exclude:
+    def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
+        if self.any_of is not None and obj in self.any_of:
             return State.REJECT
         if self.invalidator is not None and self.invalidator(obj):
             return State.REJECT
@@ -145,7 +145,7 @@ class At(Generic[Outer, Inner]):
     a Mapping object, gets the value by key and propogates this value to
     the next nodes.
     """
-    next_nodes: tuple[Node[Outer, Inner], ...]
+    next_nodes: tuple[Node[Outer, Inner], ...] = field(init=False)
     key: Hashable
 
     def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
@@ -177,7 +177,7 @@ class FromList(Generic[Outer, Inner]):
     gets the value by key, and then treats the value as an Iterable object, and
     so forth (see the previous way).
     """
-    next_nodes: tuple[Node[Outer, Inner], ...]
+    next_nodes: tuple[Node[Outer, Inner], ...] = field(init=False)
     key: Hashable | KeyExistence = field(default=KeyExistence.NONE)
 
     def process(self, obj: Any, context: Context[Outer, Inner]) -> State:

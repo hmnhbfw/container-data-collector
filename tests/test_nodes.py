@@ -1,5 +1,4 @@
 import random
-from typing import Any
 
 from container_data_collector.nodes import (
     At,
@@ -14,15 +13,18 @@ from container_data_collector.nodes import (
 
 
 def test_element():
+    Outer = list[int]
+    Inner = list[int]
+
     answer = [random.randint(-100, 100) for _ in range(10)]
 
-    result: list[int] = []
+    result: Outer = []
     context = Context(
         top_container=result,
         inserter=lambda c, e: c.append(e), n_elements=1,
         group_factory=lambda c: c, n_groups=0,
     )
-    element = Element[list[int], list[int]](1)
+    element = Element[Outer, Inner](1)
 
     for obj in answer:
         assert element.process(obj, context) is State.SUCCESS
@@ -30,22 +32,26 @@ def test_element():
 
 
 def test_element_with_exclude():
+    Outer = list[int]
+    Inner = list[int]
+
     banned = {random.randint(-100, 100) for _ in range(5)}
-    data: list[int] = list(banned) + [random.randint(-100, 100) for _ in range(5)]
+    data: Outer = list(banned) + [random.randint(-100, 100) for _ in range(5)]
     random.shuffle(data)
     answer = list(filter(
         lambda x: x not in banned,
         data
     ))
 
-    result: list[int] = []
+    result: Outer = []
     context = Context(
         top_container=result,
         inserter=lambda c, e: c.append(e), n_elements=1,
         group_factory=lambda c: c, n_groups=0,
     )
-    exclude = Exclude[list[int], list[int]](exclude=banned)
-    element = Element[list[int], list[int]](1, next_node=exclude)
+    exclude = Exclude[Outer, Inner](any_of=banned)
+    element = Element[Outer, Inner](1)
+    element.attach(exclude)
 
     for obj in data:
         state = element.process(obj, context)
@@ -57,19 +63,23 @@ def test_element_with_exclude():
 
 
 def test_element_with_invalidator():
+    Outer = list[int]
+    Inner = list[int]
+
     answer = list(filter(
         lambda x: x % 2 == 0,
         [random.randint(-100, 100) for _ in range(10)]
     ))
 
-    result: list[int] = []
+    result: Outer = []
     context = Context(
         top_container=result,
         inserter=lambda c, e: c.append(e), n_elements=1,
         group_factory=lambda c: c, n_groups=0,
     )
-    exclude = Exclude[list[int], list[int]](invalidator=lambda x: x % 2 != 0)
-    element = Element[list[int], list[int]](1, next_node=exclude)
+    exclude = Exclude[Outer, Inner](invalidator=lambda x: x % 2 != 0)
+    element = Element[Outer, Inner](1)
+    element.attach(exclude)
 
     for obj in answer:
         state = element.process(obj, context)
@@ -81,22 +91,26 @@ def test_element_with_invalidator():
 
 
 def test_element_with_exclude_and_invalidator():
+    Outer = list[int]
+    Inner = list[int]
+
     banned = {random.randint(-100, 100) for _ in range(5)}
-    data: list[int] = list(banned) + [random.randint(-100, 100) for _ in range(5)]
+    data: Outer= list(banned) + [random.randint(-100, 100) for _ in range(5)]
     random.shuffle(data)
     answer = list(filter(
         lambda x: x not in banned and x % 2 == 0,
         data
     ))
 
-    result: list[int] = []
+    result: Outer = []
     context = Context(
         top_container=result,
         inserter=lambda c, e: c.append(e), n_elements=1,
         group_factory=lambda c: c, n_groups=0,
     )
-    exclude = Exclude[list[int], list[int]](exclude=banned, invalidator=lambda x: x % 2 != 0)
-    element = Element[list[int], list[int]](1, next_node=exclude)
+    exclude = Exclude[Outer, Inner](any_of=banned, invalidator=lambda x: x % 2 != 0)
+    element = Element[Outer, Inner](1)
+    element.attach(exclude)
 
     for obj in data:
         state = element.process(obj, context)
@@ -108,22 +122,26 @@ def test_element_with_exclude_and_invalidator():
 
 
 def test_element_with_include():
+    Outer = list[int]
+    Inner = list[int]
+
     allowed = {random.randint(-100, 100) for _ in range(5)}
-    data: list[int] = list(allowed) + [random.randint(-100, 100) for _ in range(5)]
+    data: Outer = list(allowed) + [random.randint(-100, 100) for _ in range(5)]
     random.shuffle(data)
     answer = list(filter(
         lambda x: x in allowed,
         data
     ))
 
-    result: list[int] = []
+    result: Outer = []
     context = Context(
         top_container=result,
         inserter=lambda c, e: c.append(e), n_elements=1,
         group_factory=lambda c: c, n_groups=0,
     )
-    include = Include[list[int], list[int]](include=allowed)
-    element = Element[list[int], list[int]](1, next_node=include)
+    include = Include[Outer, Inner](any_of=allowed)
+    element = Element[Outer, Inner](1)
+    element.attach(include)
 
     for obj in data:
         state = element.process(obj, context)
@@ -135,19 +153,23 @@ def test_element_with_include():
 
 
 def test_element_with_validator():
+    Outer = list[int]
+    Inner = list[int]
+
     answer = list(filter(
         lambda x: x % 2 == 0,
         [random.randint(-100, 100) for _ in range(10)]
     ))
 
-    result: list[int] = []
+    result: Outer = []
     context = Context(
         top_container=result,
         inserter=lambda c, e: c.append(e), n_elements=1,
         group_factory=lambda c: c, n_groups=0,
     )
-    include = Include[list[int], list[int]](validator=lambda x: x % 2 == 0)
-    element = Element[list[int], list[int]](1, next_node=include)
+    include = Include[Outer, Inner](validator=lambda x: x % 2 == 0)
+    element = Element[Outer, Inner](1)
+    element.attach(include)
 
     for obj in answer:
         state = element.process(obj, context)
@@ -159,22 +181,26 @@ def test_element_with_validator():
 
 
 def test_element_with_include_and_validator():
+    Outer = list[int]
+    Inner = list[int]
+
     allowed = {random.randint(-100, 100) for _ in range(5)}
-    data: list[int] = list(allowed) + [random.randint(-100, 100) for _ in range(5)]
+    data: Outer = list(allowed) + [random.randint(-100, 100) for _ in range(5)]
     random.shuffle(data)
     answer = list(filter(
         lambda x: x in allowed and x % 2 == 0,
         data
     ))
 
-    result: list[int] = []
+    result: Outer = []
     context = Context(
         top_container=result,
         inserter=lambda c, e: c.append(e), n_elements=1,
         group_factory=lambda c: c, n_groups=0,
     )
-    include = Include[list[int], list[int]](include=allowed, validator=lambda x: x % 2 == 0)
-    element = Element[list[int], list[int]](1, next_node=include)
+    include = Include[Outer, Inner](any_of=allowed, validator=lambda x: x % 2 == 0)
+    element = Element[Outer, Inner](1)
+    element.attach(include)
 
     for obj in data:
         state = element.process(obj, context)
@@ -186,21 +212,24 @@ def test_element_with_include_and_validator():
 
 
 def test_group():
+    Outer = dict[str, dict[int, list[tuple[str, int]]]]
+    Inner = list[tuple[str, int]]
+
     data = [random.randint(-100, 100) for _ in range(10)]
-    answer: dict[str, dict[int, list[tuple[str, int]]]] = {}
+    answer: Outer = {}
     for x in data:
         answer.setdefault(str(x), {}).setdefault(x, []).append((str(x), x))
 
-    result: dict[str, dict[int, list[tuple[str, int]]]] = {}
+    result: Outer = {}
     context = Context(
         top_container=result,
         inserter=lambda c, e1, e2: c.append((e1, e2)), n_elements=2,
         group_factory=lambda c, k1, k2: c.setdefault(k1, {}).setdefault(k2, []), n_groups=2,
     )
-    e1 = Element[dict[str, Any], list[tuple[str, int]]](1)
-    e2 = Element[dict[str, Any], list[tuple[str, int]]](2)
-    g1 = Group[dict[str, Any], list[tuple[str, int]]](1, factory=str)
-    g2 = Group[dict[str, Any], list[tuple[str, int]]](2)
+    e1 = Element[Outer, Inner](1)
+    e2 = Element[Outer, Inner](2)
+    g1 = Group[Outer, Inner](1, factory=str)
+    g2 = Group[Outer, Inner](2)
 
     for x in data:
         g1.process(x, context)
@@ -211,8 +240,11 @@ def test_group():
 
 
 def test_at():
+    Outer = dict[str, dict[int, list[tuple[int, int]]]]
+    Inner = list[tuple[int, int]]
+
     data = random.randint(-100, 100)
-    answer: dict[str, dict[int, list[tuple[int, int]]]] = {
+    answer: Outer = {
         str(data): {
             data: [
                 (data, data)
@@ -220,63 +252,70 @@ def test_at():
         }
     }
 
-    result: dict[str, dict[int, list[tuple[int, int]]]] = {}
+    result: Outer = {}
     context = Context(
         top_container=result,
         inserter=lambda c, e1, e2: c.append((e1, e2)), n_elements=2,
         group_factory=lambda c, k1, k2: c.setdefault(k1, {}).setdefault(k2, []), n_groups=2,
     )
-    e1 = Element[dict[str, Any], list[tuple[int, int]]](1)
-    e2 = Element[dict[str, Any], list[tuple[int, int]]](2)
-    g1 = Group[dict[str, Any], list[tuple[int, int]]](1, factory=str)
-    g2 = Group[dict[str, Any], list[tuple[int, int]]](2)
-    at = At[dict[str, Any], list[tuple[int, int]]](key="data", next_nodes=(g2, e1, g1, e2))
+    e1 = Element[Outer, Inner](1)
+    e2 = Element[Outer, Inner](2)
+    g1 = Group[Outer, Inner](1, factory=str)
+    g2 = Group[Outer, Inner](2)
+    at = At[Outer, Inner](key="data")
+    at.attach(g2, e1, g1, e2)
 
     at.process({"data": data}, context)
     assert result == answer
 
 
 def test_from_list_without_key():
+    Outer = dict[str, dict[int, list[tuple[int, int]]]]
+    Inner = list[tuple[int, int]]
+
     data = [random.randint(-100, 100) for _ in range(10)]
-    answer: dict[str, dict[int, list[tuple[int, int]]]] = {}
+    answer: Outer = {}
     for x in data:
         answer.setdefault(str(x), {}).setdefault(x, []).append((x, x))
 
-    result: dict[str, dict[int, list[tuple[int, int]]]] = {}
+    result: Outer = {}
     context = Context(
         top_container=result,
         inserter=lambda c, e1, e2: c.append((e1, e2)), n_elements=2,
         group_factory=lambda c, k1, k2: c.setdefault(k1, {}).setdefault(k2, []), n_groups=2,
     )
-    e1 = Element[dict[str, Any], list[tuple[int, int]]](1)
-    e2 = Element[dict[str, Any], list[tuple[int, int]]](2)
-    g1 = Group[dict[str, Any], list[tuple[int, int]]](1, factory=str)
-    g2 = Group[dict[str, Any], list[tuple[int, int]]](2)
-    from_list = FromList[dict[str, Any], list[tuple[int, int]]](next_nodes=(g1, g2, e1, e2))
+    e1 = Element[Outer, Inner](1)
+    e2 = Element[Outer, Inner](2)
+    g1 = Group[Outer, Inner](1, factory=str)
+    g2 = Group[Outer, Inner](2)
+    from_list = FromList[Outer, Inner]()
+    from_list.attach(g1, g2, e1, e2)
 
     from_list.process(data, context)
     assert result == answer
 
 
 def test_from_list_with_key():
+    Outer = dict[str, dict[int, list[tuple[int, int]]]]
+    Inner = list[tuple[int, int]]
+
     data = [random.randint(-100, 100) for _ in range(10)]
-    answer: dict[str, dict[int, list[tuple[int, int]]]] = {}
+    answer: Outer = {}
     for x in data:
         answer.setdefault(str(x), {}).setdefault(x, []).append((x, x))
 
-    result: dict[str, dict[int, list[tuple[int, int]]]] = {}
+    result: Outer = {}
     context = Context(
         top_container=result,
         inserter=lambda c, e1, e2: c.append((e1, e2)), n_elements=2,
         group_factory=lambda c, k1, k2: c.setdefault(k1, {}).setdefault(k2, []), n_groups=2,
     )
-    e1 = Element[dict[str, Any], list[tuple[int, int]]](1)
-    e2 = Element[dict[str, Any], list[tuple[int, int]]](2)
-    g1 = Group[dict[str, Any], list[tuple[int, int]]](1, factory=str)
-    g2 = Group[dict[str, Any], list[tuple[int, int]]](2)
-    from_list = FromList[dict[str, Any], list[tuple[int, int]]](
-        key="data", next_nodes=(g2, g1, e2, e1)
-    )
+    e1 = Element[Outer, Inner](1)
+    e2 = Element[Outer, Inner](2)
+    g1 = Group[Outer, Inner](1, factory=str)
+    g2 = Group[Outer, Inner](2)
+    from_list = FromList[Outer, Inner](key="data")
+    from_list.attach(g2, g1, e2, e1)
 
     from_list.process({"data": data}, context)
     assert result == answer
