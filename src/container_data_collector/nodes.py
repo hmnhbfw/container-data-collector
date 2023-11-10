@@ -25,6 +25,9 @@ class Node(Protocol[Outer, Inner]):
     def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
         ...
 
+    def attach(self, *args: "Node[Outer, Inner]") -> None:
+        ...
+
 
 @dataclass(slots=True, eq=False, match_args=False)
 class Element(Generic[Outer, Inner]):
@@ -46,6 +49,11 @@ class Element(Generic[Outer, Inner]):
 
         context.apply_element(obj, pos=self.pos)
         return State.SUCCESS
+
+    def attach(self, *args: Node[Outer, Inner]) -> None:
+        if len(args) != 1:
+            raise ValueError("The Element node can have only one node.")
+        self.next_node = args[0]
 
 
 @dataclass(slots=True, eq=False, match_args=False)
@@ -73,6 +81,11 @@ class Group(Generic[Outer, Inner]):
         context.create_group(obj, pos=self.level)
         return State.SUCCESS
 
+    def attach(self, *args: Node[Outer, Inner]) -> None:
+        if len(args) != 1:
+            raise ValueError("The Group node can have only one node.")
+        self.next_node = args[0]
+
 
 @dataclass(slots=True, eq=False, match_args=False, kw_only=True)
 class Include(Generic[Outer, Inner]):
@@ -93,6 +106,11 @@ class Include(Generic[Outer, Inner]):
         if self.validator is not None and not self.validator(obj):
             return State.REJECT
         return State.SUCCESS
+
+    def attach(self, *args: Node[Outer, Inner]) -> None:
+        class_name = self.__class__.__name__
+        msg = f"The terminal node '{class_name}' is a leaf, so it can't have any attached nodes."
+        raise NotImplementedError(msg)
 
 
 @dataclass(slots=True, eq=False, match_args=False, kw_only=True)
@@ -115,6 +133,11 @@ class Exclude(Generic[Outer, Inner]):
             return State.REJECT
         return State.SUCCESS
 
+    def attach(self, *args: Node[Outer, Inner]) -> None:
+        class_name = self.__class__.__name__
+        msg = f"The terminal node '{class_name}' is a leaf, so it can't have any attached nodes."
+        raise NotImplementedError(msg)
+
 
 @dataclass(slots=True, eq=False, match_args=False, kw_only=True)
 class At(Generic[Outer, Inner]):
@@ -122,7 +145,7 @@ class At(Generic[Outer, Inner]):
     a Mapping object, gets the value by key and propogates this value to
     the next nodes.
     """
-    next_nodes: Iterable[Node[Outer, Inner]]
+    next_nodes: tuple[Node[Outer, Inner], ...]
     key: Hashable
 
     def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
@@ -134,6 +157,9 @@ class At(Generic[Outer, Inner]):
                 case State.REJECT as reject:
                     return reject
         return State.SUCCESS
+
+    def attach(self, *args: Node[Outer, Inner]) -> None:
+        self.next_nodes = args
 
 
 class KeyExistence(IntEnum):
@@ -151,7 +177,7 @@ class FromList(Generic[Outer, Inner]):
     gets the value by key, and then treats the value as an Iterable object, and
     so forth (see the previous way).
     """
-    next_nodes: Iterable[Node[Outer, Inner]]
+    next_nodes: tuple[Node[Outer, Inner], ...]
     key: Hashable | KeyExistence = field(default=KeyExistence.NONE)
 
     def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
@@ -161,3 +187,6 @@ class FromList(Generic[Outer, Inner]):
             for node in self.next_nodes:
                 node.process(value, context)
         return State.SUCCESS
+
+    def attach(self, *args: Node[Outer, Inner]) -> None:
+        self.next_nodes = args
