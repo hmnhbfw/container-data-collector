@@ -26,37 +26,7 @@ class Node(Protocol[Outer, Inner]):
         ...
 
 
-_DATACLASS_KWARGS = {
-    # NOTE: frozen=True causes exception raising , probably, due to some runtime bug
-    # a sample of code is below:
-    #
-    # from dataclasses import dataclass
-    # from typing import Generic, TypeVar
-    #
-    # T = TypeVar("T")
-    # @dataclass(frozen=True, slots=True)
-    # class Test(Generic[T]):
-    #     x: T
-    #
-    # Test[int](3)
-    #
-    # Traceback (most recent call last):
-    #   File "....py", line 9, in <module>
-    #     Test[int](3)
-    #   File "...\Python\Python311\Lib\typing.py", line 1270, in __call__
-    #     result.__orig_class__ = self
-    #     ^^^^^^^^^^^^^^^^^^^^^
-    #   File "<string>", line 5, in __setattr__
-    # TypeError: super(type, obj): obj must be an instance or subtype of type
-    #
-    # "frozen": True,
-    "slots": True,
-    "eq": False,
-    "match_args": False,
-}
-
-
-@dataclass(**_DATACLASS_KWARGS)
+@dataclass(slots=True, eq=False, match_args=False)
 class Element(Generic[Outer, Inner]):
     """Node that represents one of the elements collecting during tree traversal.
     Position tells the inserter function what position the element has in it.
@@ -78,7 +48,7 @@ class Element(Generic[Outer, Inner]):
         return State.SUCCESS
 
 
-@dataclass(**_DATACLASS_KWARGS)
+@dataclass(slots=True, eq=False, match_args=False)
 class Group(Generic[Outer, Inner]):
     """Node that represents one of the keys by which the elements will be grouped.
     Level tells what level of grouping this key is related. Factory tells how
@@ -104,7 +74,7 @@ class Group(Generic[Outer, Inner]):
         return State.SUCCESS
 
 
-@dataclass(**_DATACLASS_KWARGS, kw_only=True)
+@dataclass(slots=True, eq=False, match_args=False, kw_only=True)
 class Include(Generic[Outer, Inner]):
     """Node that takes an object from the previous node and checks it.
     If it is not contained in the 'include' container or it doesn't pass
@@ -125,7 +95,7 @@ class Include(Generic[Outer, Inner]):
         return State.SUCCESS
 
 
-@dataclass(**_DATACLASS_KWARGS, kw_only=True)
+@dataclass(slots=True, eq=False, match_args=False, kw_only=True)
 class Exclude(Generic[Outer, Inner]):
     """Node that takes an object from the previous node and checks it.
     If it is contained in the 'exclude' container or it passes the check of
@@ -146,7 +116,7 @@ class Exclude(Generic[Outer, Inner]):
         return State.SUCCESS
 
 
-@dataclass(**_DATACLASS_KWARGS, kw_only=True)
+@dataclass(slots=True, eq=False, match_args=False, kw_only=True)
 class At(Generic[Outer, Inner]):
     """Node that takes an object from the previous node and treats it as
     a Mapping object, gets the value by key and propogates this value to
@@ -171,7 +141,7 @@ class KeyExistence(IntEnum):
     NONE = auto()
 
 
-@dataclass(**_DATACLASS_KWARGS, kw_only=True)
+@dataclass(slots=True, eq=False, match_args=False, kw_only=True)
 class FromList(Generic[Outer, Inner]):
     """Node that takes an object from the previous node and treats it in two
     possible ways:
