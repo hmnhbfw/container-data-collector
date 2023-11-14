@@ -5,10 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Generic
 
 from container_data_collector.common_typevars import Inner, Outer
-from container_data_collector.vector_partial import (
-    FuncWithFixedArgType,
-    VectorPartial,
-)
+from container_data_collector.vector_partial import VectorPartial
 
 
 @dataclass(slots=True, eq=False, match_args=False)
@@ -26,13 +23,11 @@ class Context(Generic[Outer, Inner]):
 
     def __init__(self, /, *,
                  top_container: Outer,
-                 inserter: FuncWithFixedArgType[Inner, None],
-                 n_elements: int,
-                 group_factory: FuncWithFixedArgType[Outer, Inner],
-                 n_groups: int) -> None:
-        self._element_inserter = VectorPartial(inserter, n_args=n_elements+1)
-        self._group_factory = VectorPartial(group_factory, n_args=n_groups+1)
-        if not n_groups:
+                 inserter: VectorPartial[Inner, None],
+                 group_factory: VectorPartial[Outer, Inner]) -> None:
+        self._element_inserter = inserter
+        self._group_factory = group_factory
+        if group_factory.args_count == 1:
             self._element_inserter.insert(top_container, pos=1)
         else:
             self._group_factory.insert(top_container, pos=1)
