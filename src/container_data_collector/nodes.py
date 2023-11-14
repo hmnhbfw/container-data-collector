@@ -57,6 +57,12 @@ class Element(Generic[Outer, Inner]):
     _: KW_ONLY
     next_node: Node[Outer, Inner] | None = field(default=None, init=False)
 
+    def __post_init__(self) -> None:
+        if self.pos < 1:
+            msg = "The position of the element must be greater than zero."
+            hint = f"Instead, pos={self.pos} is given."
+            raise ValueError(msg + "\n" + hint)
+
     def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
         if self.next_node:
             match self.next_node.process(obj, context):
@@ -85,6 +91,12 @@ class Group(Generic[Outer, Inner]):
     _: KW_ONLY
     factory: Callable[[Any], Hashable] | None = field(default=None)
     next_node: Node[Outer, Inner] | None = field(default=None, init=False)
+
+    def __post_init__(self) -> None:
+        if self.level < 1:
+            msg = "The level of the group must be greater than zero."
+            hint = f"Instead, level={self.level} is given."
+            raise ValueError(msg + "\n" + hint)
 
     def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
         if self.factory is not None:
