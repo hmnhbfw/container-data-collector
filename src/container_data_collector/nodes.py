@@ -43,7 +43,7 @@ class PseudoRoot(Generic[Outer, Inner]):
                     return reject
         return State.SUCCESS
 
-    def attach(self, *args: "Node[Outer, Inner]") -> None:
+    def attach(self, *args: Node[Outer, Inner]) -> None:
         self.next_nodes.extend(args)
 
 
