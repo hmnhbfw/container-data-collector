@@ -12,4 +12,9 @@ from typing import TypeVar
 
 
 Inner = TypeVar("Inner")
+Inner_co = TypeVar("Inner_co", covariant=True)
+Inner_contra = TypeVar("Inner_contra", contravariant=True)
+
 Outer = TypeVar("Outer")
+Outer_co = TypeVar("Outer_co", covariant=True)
+Outer_contra = TypeVar("Outer_contra", contravariant=True)
