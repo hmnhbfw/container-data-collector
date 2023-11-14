@@ -8,7 +8,7 @@ from container_data_collector.nodes import (
     Context,
     Element,
     Exclude,
-    FromList,
+    ForEach,
     Group,
     Include,
     State,
@@ -328,36 +328,8 @@ def test_from_list_without_key():
     e2 = Element[Outer, Inner](2)
     g1 = Group[Outer, Inner](1, factory=str)
     g2 = Group[Outer, Inner](2)
-    from_list = FromList[Outer, Inner]()
-    from_list.attach(g1, g2, e1, e2)
+    for_each = ForEach[Outer, Inner]()
+    for_each.attach(g1, g2, e1, e2)
 
-    from_list.process(data, context)
-    assert result == answer
-
-
-def test_from_list_with_key():
-    Outer = dict[str, dict[int, list[tuple[int, int]]]]
-    Inner = list[tuple[int, int]]
-
-    data = [random.randint(-100, 100) for _ in range(10)]
-    answer: Outer = {}
-    for x in data:
-        answer.setdefault(str(x), {}).setdefault(x, []).append((x, x))
-
-    result: Outer = {}
-    context = Context(
-        top_container=result,
-        inserter=VectorPartial(list_append_2, n_args=3),
-        group_factory=VectorPartial(
-            lambda c, k1, k2: c.setdefault(k1, {}).setdefault(k2, []),
-            n_args=3),
-    )
-    e1 = Element[Outer, Inner](1)
-    e2 = Element[Outer, Inner](2)
-    g1 = Group[Outer, Inner](1, factory=str)
-    g2 = Group[Outer, Inner](2)
-    from_list = FromList[Outer, Inner](key="data")
-    from_list.attach(g2, g1, e2, e1)
-
-    from_list.process({"data": data}, context)
+    for_each.process(data, context)
     assert result == answer

@@ -192,27 +192,15 @@ class At(Generic[Outer, Inner]):
         self.next_nodes.extend(args)
 
 
-class KeyExistence(IntEnum):
-    """Stub to make an emphasis that a key doesn't exist."""
-    NONE = auto()
-
-
 @dataclass(slots=True, eq=False, match_args=False, kw_only=True)
-class FromList(Generic[Outer, Inner]):
-    """Node that takes an object from the previous node and treats it in two
-    possible ways:
-      - if there is no key, then the object is treated as an Iterable object,
-    iterates over it, and propogates each result to the next nodes.
-      - if there is a key, then the object is treated as a Mapping object,
-    gets the value by key, and then treats the value as an Iterable object, and
-    so forth (see the previous way).
+class ForEach(Generic[Outer, Inner]):
+    """Node that takes an object from the previous node and treats it
+    as an Iterable object, iterates over it, and propogates each result
+    to the next nodes.
     """
     next_nodes: list[Node[Outer, Inner]] = field(default_factory=list, init=False)
-    key: Hashable | KeyExistence = field(default=KeyExistence.NONE)
 
     def process(self, obj: Any, context: Context[Outer, Inner]) -> State:
-        if self.key is not KeyExistence.NONE:
-            obj = obj[self.key]
         for value in obj:
             for node in self.next_nodes:
                 node.process(value, context)
