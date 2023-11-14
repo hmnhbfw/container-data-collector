@@ -6,7 +6,7 @@ import inspect
 from enum import IntEnum, auto
 from dataclasses import dataclass
 from collections.abc import Callable
-from typing import Any, Concatenate, Generic, TypeAlias, TypeVar, final
+from typing import Any, Concatenate, Generic, Self, TypeAlias, TypeVar, final
 
 
 @final
@@ -56,6 +56,19 @@ class VectorPartial(Generic[FixedT, ReturnT]):
             hint = f"it is still waiting {self.missing_args} arguments."
             raise RuntimeError(msg + " " + hint)
         return self._func(*self._args)
+
+    def __copy__(self) -> Self:
+        cls = self.__class__
+        shallow_copy = cls.__new__(cls)
+        shallow_copy._func = self._func
+        shallow_copy._args = self._args.copy()
+        shallow_copy._missing_args = self._missing_args
+        return shallow_copy
+
+    @property
+    def args_count(self) -> int:
+        """The number of the arguments."""
+        return len(self._args)
 
     @property
     def can_return(self) -> bool:
