@@ -15,14 +15,14 @@ class ArgState(IntEnum):
     NONE = auto()
 
 
-FixedT = TypeVar("FixedT")
-ReturnT = TypeVar("ReturnT")
+FixedT_contra = TypeVar("FixedT_contra", contravariant=True)
+ReturnT_co = TypeVar("ReturnT_co", covariant=True)
 
-FuncWithFixedArgType: TypeAlias = Callable[Concatenate[FixedT, ...], ReturnT]
+FuncWithFixedArgType: TypeAlias = Callable[Concatenate[FixedT_contra, ...], ReturnT_co]
 
 @final
 @dataclass(slots=True, eq=False, match_args=False)
-class VectorPartial(Generic[FixedT, ReturnT]):
+class VectorPartial(Generic[FixedT_contra, ReturnT_co]):
     """Partial wrapper for functions with the fixed type of the first argument
     and the return value type. The arguments of the functions can be added and
     removed at the specified position in constant time. After all the argument
@@ -40,17 +40,19 @@ class VectorPartial(Generic[FixedT, ReturnT]):
     arguments.
     """
 
-    _func: FuncWithFixedArgType[FixedT, ReturnT]
+    _func: FuncWithFixedArgType[FixedT_contra, ReturnT_co]
     _args: list[Any]
     _missing_args: int
 
-    def __init__(self, func: FuncWithFixedArgType[FixedT, ReturnT], /, *, n_args: int) -> None:
+    def __init__(self, func: FuncWithFixedArgType[FixedT_contra, ReturnT_co],
+                 /, *,
+                 n_args: int) -> None:
         VectorPartial._init_check(func, n_args=n_args)
         self._func = func
         self._args = [ArgState.NONE for _ in range(n_args)]
         self._missing_args = n_args
 
-    def __call__(self) -> ReturnT:
+    def __call__(self) -> ReturnT_co:
         if not self.can_return:
             msg = f"The function {self._func.__name__} can't be called:"
             hint = f"it is still waiting {self.missing_args} arguments."
@@ -109,7 +111,9 @@ class VectorPartial(Generic[FixedT, ReturnT]):
             raise IndexError(msg + hint)
 
     @staticmethod
-    def _init_check(func: FuncWithFixedArgType[FixedT, ReturnT], /, *, n_args: int) -> None:
+    def _init_check(func: FuncWithFixedArgType[FixedT_contra, ReturnT_co],
+                    /, *,
+                    n_args: int) -> None:
         if n_args < 1:
             message = f"n_args must be greater than zero.\nInstead, {n_args=} is given."
             raise IndexError(message)
