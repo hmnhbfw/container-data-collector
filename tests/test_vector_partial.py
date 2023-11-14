@@ -1,3 +1,4 @@
+import copy
 import random
 from itertools import combinations, permutations
 from collections.abc import Callable
@@ -339,3 +340,24 @@ def test_call():
         s.insert(ps[-1], pos=ps[-1])
         assert s.can_return
         assert s() == answer
+
+
+def test_copy():
+    n_args = 1
+    f = gen_func(args=n_args, body="return _0")
+    answer = 42
+
+    s = VectorPartial(f, n_args=n_args)
+
+    s1 = copy.copy(s)
+    s.insert(answer, pos=1)
+    assert s.can_return != s1.can_return
+    assert s.missing_args != s1.missing_args
+    s1.insert(answer, pos=1)
+    assert s() == s1()
+    s.remove(1)
+    assert s.can_return != s1.can_return
+    assert s.missing_args != s1.missing_args
+    s1.remove(1)
+    assert s.can_return == s1.can_return
+    assert s.missing_args == s1.missing_args

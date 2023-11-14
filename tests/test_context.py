@@ -5,16 +5,20 @@ from typing import Any
 import pytest
 
 from container_data_collector.context import Context
+from container_data_collector.vector_partial import VectorPartial
 
 
 def test_context_without_groups():
+    def inserter(c: list[int], e: int) -> None:
+        c.append(e)
+
     answer = [random.randint(-100, 100) for _ in range(10)]
 
     result: list[int] = []
     context = Context(
         top_container=result,
-        inserter=lambda c, e: c.append(e), n_elements=1,
-        group_factory=lambda c: c, n_groups=0,
+        inserter=VectorPartial(inserter, n_args=2),
+        group_factory=VectorPartial(lambda c: c, n_args=1),
     )
 
     for e in answer:
@@ -42,8 +46,8 @@ def test_context_with_groups():
     result: dict[str, Any] = {}
     context = Context(
         top_container=result,
-        inserter=inserter, n_elements=2,
-        group_factory=group_factory, n_groups=2,
+        inserter=VectorPartial(inserter, n_args=3),
+        group_factory=VectorPartial(group_factory, n_args=3),
     )
 
     with pytest.raises(ValueError):
