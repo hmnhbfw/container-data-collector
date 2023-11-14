@@ -255,7 +255,7 @@ def test_group():
         answer.setdefault(str(x), {}).setdefault(x, []).append((x, x))
 
     result: Outer = {}
-    context = Context(
+    context = Context[Outer, Inner](
         top_container=result,
         inserter=VectorPartial(list_append_2, n_args=3),
         group_factory=VectorPartial(
@@ -289,7 +289,7 @@ def test_at():
     }
 
     result: Outer = {}
-    context = Context(
+    context = Context[Outer, Inner](
         top_container=result,
         inserter=VectorPartial(list_append_2, n_args=3),
         group_factory=VectorPartial(
@@ -317,7 +317,7 @@ def test_from_list_without_key():
         answer.setdefault(str(x), {}).setdefault(x, []).append((x, x))
 
     result: Outer = {}
-    context = Context(
+    context = Context[Outer, Inner](
         top_container=result,
         inserter=VectorPartial(list_append_2, n_args=3),
         group_factory=VectorPartial(
