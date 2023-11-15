@@ -1,5 +1,4 @@
 import random
-from typing import Any
 
 import pytest
 
@@ -22,13 +21,13 @@ def list_append(c: list[int], e: int) -> None:
 
 def test_wrong_element():
     with pytest.raises(ValueError):
-        Element[Any, Any](0)
+        Element(0)
 
     with pytest.raises(ValueError):
-        Element[Any, Any](-1)
+        Element(-1)
 
     with pytest.raises(ValueError):
-        Element[Any, Any](random.randint(-100, -2))
+        Element(random.randint(-100, -2))
 
 
 def test_element():
@@ -38,15 +37,15 @@ def test_element():
     answer = [random.randint(-100, 100) for _ in range(10)]
 
     result: Outer = []
-    context = Context(
+    context = Context[Outer, Inner](
         top_container=result,
         inserter=VectorPartial(list_append, n_args=2),
         group_factory=VectorPartial(lambda c: c, n_args=1),
     )
-    element = Element[Outer, Inner](1)
+    element = Element(1)
 
     for obj in answer:
-        assert element.process(obj, context) is State.SUCCESS
+        assert element.process(obj, context).state is State.SUCCESS
     assert result == answer
 
 
@@ -63,21 +62,21 @@ def test_element_with_exclude():
     ))
 
     result: Outer = []
-    context = Context(
+    context = Context[Outer, Inner](
         top_container=result,
         inserter=VectorPartial(list_append, n_args=2),
         group_factory=VectorPartial(lambda c: c, n_args=1),
     )
-    exclude = Exclude[Outer, Inner](any_of=banned)
-    element = Element[Outer, Inner](1)
-    element.attach(exclude)
+    exclude = Exclude(any_of=banned)
+    element = Element(1)
+    element.connect_with(exclude)
 
     for obj in data:
-        state = element.process(obj, context)
+        res = element.process(obj, context)
         if obj not in banned:
-            assert state is State.SUCCESS
+            assert res.state is State.SUCCESS
         else:
-            assert state is State.REJECT
+            assert res.state is State.REJECT
     assert result == answer
 
 
@@ -91,21 +90,21 @@ def test_element_with_invalidator():
     ))
 
     result: Outer = []
-    context = Context(
+    context = Context[Outer, Inner](
         top_container=result,
         inserter=VectorPartial(list_append, n_args=2),
         group_factory=VectorPartial(lambda c: c, n_args=1),
     )
-    exclude = Exclude[Outer, Inner](invalidator=lambda x: x % 2 != 0)
-    element = Element[Outer, Inner](1)
-    element.attach(exclude)
+    exclude = Exclude(invalidator=lambda x: x % 2 != 0)
+    element = Element(1)
+    element.connect_with(exclude)
 
     for obj in answer:
-        state = element.process(obj, context)
+        res = element.process(obj, context)
         if obj % 2 == 0:
-            assert state is State.SUCCESS
+            assert res.state is State.SUCCESS
         else:
-            assert state is State.REJECT
+            assert res.state is State.REJECT
     assert result == answer
 
 
@@ -122,21 +121,21 @@ def test_element_with_exclude_and_invalidator():
     ))
 
     result: Outer = []
-    context = Context(
+    context = Context[Outer, Inner](
         top_container=result,
         inserter=VectorPartial(list_append, n_args=2),
         group_factory=VectorPartial(lambda c: c, n_args=1),
     )
-    exclude = Exclude[Outer, Inner](any_of=banned, invalidator=lambda x: x % 2 != 0)
-    element = Element[Outer, Inner](1)
-    element.attach(exclude)
+    exclude = Exclude(any_of=banned, invalidator=lambda x: x % 2 != 0)
+    element = Element(1)
+    element.connect_with(exclude)
 
     for obj in data:
-        state = element.process(obj, context)
+        res = element.process(obj, context)
         if obj not in banned and obj % 2 == 0:
-            assert state is State.SUCCESS
+            assert res.state is State.SUCCESS
         else:
-            assert state is State.REJECT
+            assert res.state is State.REJECT
     assert result == answer
 
 
@@ -153,21 +152,21 @@ def test_element_with_include():
     ))
 
     result: Outer = []
-    context = Context(
+    context = Context[Outer, Inner](
         top_container=result,
         inserter=VectorPartial(list_append, n_args=2),
         group_factory=VectorPartial(lambda c: c, n_args=1),
     )
-    include = Include[Outer, Inner](any_of=allowed)
-    element = Element[Outer, Inner](1)
-    element.attach(include)
+    include = Include(any_of=allowed)
+    element = Element(1)
+    element.connect_with(include)
 
     for obj in data:
-        state = element.process(obj, context)
+        res = element.process(obj, context)
         if obj in allowed:
-            assert state is State.SUCCESS
+            assert res.state is State.SUCCESS
         else:
-            assert state is State.REJECT
+            assert res.state is State.REJECT
     assert result == answer
 
 
@@ -181,21 +180,21 @@ def test_element_with_validator():
     ))
 
     result: Outer = []
-    context = Context(
+    context = Context[Outer, Inner](
         top_container=result,
         inserter=VectorPartial(list_append, n_args=2),
         group_factory=VectorPartial(lambda c: c, n_args=1),
     )
-    include = Include[Outer, Inner](validator=lambda x: x % 2 == 0)
-    element = Element[Outer, Inner](1)
-    element.attach(include)
+    include = Include(validator=lambda x: x % 2 == 0)
+    element = Element(1)
+    element.connect_with(include)
 
     for obj in answer:
-        state = element.process(obj, context)
+        res = element.process(obj, context)
         if obj % 2 == 0:
-            assert state is State.SUCCESS
+            assert res.state is State.SUCCESS
         else:
-            assert state is State.REJECT
+            assert res.state is State.REJECT
     assert result == answer
 
 
@@ -212,21 +211,21 @@ def test_element_with_include_and_validator():
     ))
 
     result: Outer = []
-    context = Context(
+    context = Context[Outer, Inner](
         top_container=result,
         inserter=VectorPartial(list_append, n_args=2),
         group_factory=VectorPartial(lambda c: c, n_args=1),
     )
-    include = Include[Outer, Inner](any_of=allowed, validator=lambda x: x % 2 == 0)
-    element = Element[Outer, Inner](1)
-    element.attach(include)
+    include = Include(any_of=allowed, validator=lambda x: x % 2 == 0)
+    element = Element(1)
+    element.connect_with(include)
 
     for obj in data:
-        state = element.process(obj, context)
+        res = element.process(obj, context)
         if obj in allowed and obj % 2 == 0:
-            assert state is State.SUCCESS
+            assert res.state is State.SUCCESS
         else:
-            assert state is State.REJECT
+            assert res.state is State.REJECT
     assert result == answer
 
 
@@ -236,13 +235,13 @@ def list_append_2(c: list[tuple[int, int]], e1: int, e2: int) -> None:
 
 def test_wrong_group():
     with pytest.raises(ValueError):
-        Group[Any, Any](0)
+        Group(0)
 
     with pytest.raises(ValueError):
-        Group[Any, Any](-1)
+        Group(-1)
 
     with pytest.raises(ValueError):
-        Group[Any, Any](random.randint(-100, -2))
+        Group(random.randint(-100, -2))
 
 
 def test_group():
@@ -262,10 +261,10 @@ def test_group():
             lambda c, k1, k2: c.setdefault(k1, {}).setdefault(k2, []),
             n_args=3),
     )
-    e1 = Element[Outer, Inner](1)
-    e2 = Element[Outer, Inner](2)
-    g1 = Group[Outer, Inner](1, factory=str)
-    g2 = Group[Outer, Inner](2)
+    e1 = Element(1)
+    e2 = Element(2)
+    g1 = Group(1, factory=str)
+    g2 = Group(2)
 
     for x in data:
         g1.process(x, context)
@@ -296,12 +295,12 @@ def test_at():
             lambda c, k1, k2: c.setdefault(k1, {}).setdefault(k2, []),
             n_args=3),
     )
-    e1 = Element[Outer, Inner](1)
-    e2 = Element[Outer, Inner](2)
-    g1 = Group[Outer, Inner](1, factory=str)
-    g2 = Group[Outer, Inner](2)
-    at = At[Outer, Inner](key="data")
-    at.attach(g2, e1, g1, e2)
+    e1 = Element(1)
+    e2 = Element(2)
+    g1 = Group(1, factory=str)
+    g2 = Group(2)
+    at = At(key="data")
+    at.connect_with(g2, e1, g1, e2)
 
     at.process({"data": data}, context)
     assert result == answer
@@ -324,12 +323,12 @@ def test_from_list_without_key():
             lambda c, k1, k2: c.setdefault(k1, {}).setdefault(k2, []),
             n_args=3),
     )
-    e1 = Element[Outer, Inner](1)
-    e2 = Element[Outer, Inner](2)
-    g1 = Group[Outer, Inner](1, factory=str)
-    g2 = Group[Outer, Inner](2)
-    for_each = ForEach[Outer, Inner]()
-    for_each.attach(g1, g2, e1, e2)
+    e1 = Element(1)
+    e2 = Element(2)
+    g1 = Group(1, factory=str)
+    g2 = Group(2)
+    for_each = ForEach()
+    for_each.connect_with(g1, g2, e1, e2)
 
     for_each.process(data, context)
     assert result == answer
