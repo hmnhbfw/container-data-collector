@@ -1,4 +1,4 @@
-"""Nodes of the query tree."""
+"""Nodes of the Query `Tree`."""
 
 from collections.abc import Callable, Container, Hashable
 from dataclasses import KW_ONLY, dataclass, field
@@ -23,9 +23,9 @@ class Result(Generic[Outer, Inner]):
 
 
 class Node(Protocol):
-    """Atomic unit of the query tree. Each node takes an object processed by
+    """Atomic unit of the Query `Tree`. Each node takes an object processed by
     previous node and the current context to know how process this object.
-    The Result of the processing has some State, that can trigger some events
+    The `Result` of the processing has some `State`, that can trigger some events
     in the previous node.
     """
     def process(self, obj: Any, context: Context[Outer, Inner]) -> Result[Outer, Inner]:
@@ -37,7 +37,7 @@ class Node(Protocol):
 
 @dataclass(slots=True, eq=False, match_args=False)
 class PseudoRoot:
-    """Pseudo root node of the query tree."""
+    """Pseudo root `Node` of the Query `Tree`."""
     next_nodes: list[Node] = field(default_factory=list, init=False)
 
     def process(self, obj: Any, context: Context[Outer, Inner]) -> Result[Outer, Inner]:
@@ -56,7 +56,7 @@ class PseudoRoot:
 
 @dataclass(slots=True, eq=False, match_args=False)
 class Element:
-    """Node that represents one of the elements collecting during tree traversal.
+    """`Node` that represents one of the elements collecting during tree traversal.
     Position tells the inserter function what position the element has in it.
     Next node may point to additional filters, e.g., can this element be used or not.
     """
@@ -90,7 +90,7 @@ class Element:
 
 @dataclass(slots=True, eq=False, match_args=False)
 class Group:
-    """Node that represents one of the keys by which the elements will be grouped.
+    """`Node` that represents one of the keys by which the elements will be grouped.
     Level tells what level of grouping this key is related. Factory tells how
     to make the key hashable if it is not. Next node may point to additional
     filters, e.g., can this key be used or not.
@@ -128,12 +128,12 @@ class Group:
 
 @dataclass(slots=True, eq=False, match_args=False, kw_only=True)
 class Include:
-    """Node that takes an object from the previous node and checks it.
-    If it is not contained in the 'any_of' container or it doesn't pass
-    the check of the 'validator' callable object, the whole branch until
-    the closest FromList node will be rejected.
+    """`Node` that takes an object from the previous node and checks it.
+    If it is not contained in the `any_of` container or it doesn't pass
+    the check of the `validator` `Callable` object, the whole branch until
+    the closest `ForEach` node will be rejected.
 
-    If both 'any_of' and 'validator' are not defined, the node processing
+    If both `any_of` and `validator` are not defined, the node processing
     has no effect.
     """
     any_of: Container[Any] | None = field(default=None)
@@ -154,12 +154,12 @@ class Include:
 
 @dataclass(slots=True, eq=False, match_args=False, kw_only=True)
 class Exclude:
-    """Node that takes an object from the previous node and checks it.
-    If it is contained in the 'any_of' container or it passes the check of
-    the 'invalidator' callable object, the whole branch until the closest
-    FromList node will be rejected.
+    """`Node` that takes an object from the previous node and checks it.
+    If it is contained in the `any_of` container or it passes the check of
+    the `invalidator` `Callable` object, the whole branch until the closest
+    `ForEach` node will be rejected.
 
-    If both 'any_of' and 'invalidator' are not defined, the node processing
+    If both `any_of` and `invalidator` are not defined, the node processing
     has no effect.
     """
     any_of: Container[Any] | None = field(default=None)
@@ -180,8 +180,8 @@ class Exclude:
 
 @dataclass(slots=True, eq=False, match_args=False, kw_only=True)
 class At:
-    """Node that takes an object from the previous node and treats it as
-    a Mapping object, gets the value by key and propogates this value to
+    """`Node` that takes an object from the previous node and treats it as
+    a `Mapping` object, gets the value by key and propogates this value to
     the next nodes.
     """
     next_nodes: list[Node] = field(default_factory=list, init=False)
@@ -204,8 +204,8 @@ class At:
 
 @dataclass(slots=True, eq=False, match_args=False, kw_only=True)
 class ForEach:
-    """Node that takes an object from the previous node and treats it
-    as an Iterable object, iterates over it, and propogates each result
+    """`Node` that takes an object from the previous node and treats it
+    as an `Iterable` object, iterates over it, and propogates each result
     to the next nodes.
     """
     next_nodes: list[Node] = field(default_factory=list, init=False)
