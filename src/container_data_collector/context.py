@@ -36,7 +36,7 @@ class Context(Generic[Outer, Inner]):
         """Apply the passed element to the function-inserter. Then if
         the function can be called, it will be.
 
-        Raise 'ValueError', if 'pos' is 0.
+        Raise `ValueError`, if `pos` is 0.
         """
         Context._check_pos(pos)
         self._element_inserter.insert(e, pos=pos+1)
@@ -49,7 +49,7 @@ class Context(Generic[Outer, Inner]):
         the function can be called, it will be, and the a new bottom container
         will be apply to the function-inserter as the first argument.
 
-        Raise 'ValueError', if 'pos' is 0.
+        Raise `ValueError`, if `pos` is 0.
         """
         Context._check_pos(pos)
         self._group_factory.insert(key, pos=pos+1)
