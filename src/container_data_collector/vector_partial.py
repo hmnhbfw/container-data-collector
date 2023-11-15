@@ -1,4 +1,4 @@
-"""VectorPartial class that describes a simplified partial object with only
+"""`VectorPartial` class that describes a simplified partial object with only
 non-default positional arguments and only default keyword arguments.
 """
 
@@ -10,7 +10,7 @@ from typing import Any, Concatenate, Generic, Self, TypeAlias, TypeVar, final
 
 
 @final
-class ArgState(IntEnum):
+class _ArgState(IntEnum):
     """Stub saying that there is no argument."""
     NONE = auto()
 
@@ -27,16 +27,16 @@ class VectorPartial(Generic[FixedT_contra, ReturnT_co]):
     and the return value type. The arguments of the functions can be added and
     removed at the specified position in constant time. After all the argument
     was added, the function can be called, but if someone of the arguments is
-    missing, raise 'RuntimeError'.
+    missing, raise `RuntimeError`.
 
     These function must have at least one positional argument, can't have any
     positional arguments with a default value, and can't have any keyword
-    arguments without a default value. Raise 'TypeError' if someone of these
+    arguments without a default value. Raise `TypeError` if someone of these
     conditions is not complited.
 
-    Passed the 'n_args' argument describes how many positional arguments
-    the function has to take. Raise 'IndexError' if it is not greater than zero.
-    Raise 'TypeError' if it doesn't match with the number of the function's
+    Passed the `n_args` argument describes how many positional arguments
+    the function has to take. Raise `IndexError` if it is not greater than zero.
+    Raise `TypeError` if it doesn't match with the number of the function's
     arguments.
     """
 
@@ -49,7 +49,7 @@ class VectorPartial(Generic[FixedT_contra, ReturnT_co]):
                  n_args: int) -> None:
         VectorPartial._init_check(func, n_args=n_args)
         self._func = func
-        self._args = [ArgState.NONE for _ in range(n_args)]
+        self._args = [_ArgState.NONE for _ in range(n_args)]
         self._missing_args = n_args
 
     def __call__(self) -> ReturnT_co:
@@ -74,7 +74,7 @@ class VectorPartial(Generic[FixedT_contra, ReturnT_co]):
 
     @property
     def can_return(self) -> bool:
-        """Return True if the function is ready to be called."""
+        """Return `True` if the function is ready to be called."""
         return self._missing_args == 0
 
     @property
@@ -84,24 +84,24 @@ class VectorPartial(Generic[FixedT_contra, ReturnT_co]):
 
     def insert(self, arg: Any, /, *, pos: int) -> None:
         """Insert a new argument of the function at the specified position.
-        Raise 'IndexError' if 'pos' is not greater than zero and less or equal
+        Raise `IndexError` if 'pos' is not greater than zero and less or equal
         than a number of the arguments that the function expects.
         """
         self._check_pos(pos)
         index = pos - 1
-        if self._args[index] is ArgState.NONE:
+        if self._args[index] is _ArgState.NONE:
             self._missing_args -= 1
         self._args[index] = arg
 
     def remove(self, pos: int) -> None:
         """Remove an argument at the specified position.
-        Raise 'IndexError' if 'pos' is not greater than zero and less or equal
+        Raise `IndexError` if 'pos' is not greater than zero and less or equal
         than a number of the arguments that the function expects.
         """
         self._check_pos(pos)
         index = pos - 1
-        if self._args[index] is not ArgState.NONE:
-            self._args[index] = ArgState.NONE
+        if self._args[index] is not _ArgState.NONE:
+            self._args[index] = _ArgState.NONE
             self._missing_args += 1
 
     def _check_pos(self, pos: int) -> None:
