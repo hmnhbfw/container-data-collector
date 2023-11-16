@@ -5,17 +5,17 @@ specify what parameters the functions have and the correct number of these
 functions.):
 
 ```
-QueryTree ::= Element | At | FromList | Branches
+QueryTree ::= Element | At | ForEach | Branches
 
 At ::= AtCall "." AtBranch
 AtCall ::= "at(...)"
 AtBranch ::= Group | Filter | QueryTree
 
-FromList ::= FromListCall "." QueryTree
-FromListCall ::= "from_list()"
+ForEach ::= ForEachCall "." QueryTree
+ForEachCall ::= "for_each()"
 
 Branches ::= "branches(" BranchList ")"
-BranchList ::= BranchListWithoutFromList
+BranchList ::= BranchListWithoutForEach
                 | At "," AtOnlyBranchList
                 | AtOnlyBranchList "," At "," AtOnlyBranchList
                 | AtOnlyBranchList "," At
@@ -23,10 +23,10 @@ AtOnlyBranchList ::= AtOnly
                     | AtOnly "," AtOnlyBranchList
 
 AtOnly ::= AtCall "." AtOnlyBranch
-AtOnlyBranch ::= Element | Group | Filter | AtOnly | BranchesWithoutFromList
+AtOnlyBranch ::= Element | Group | Filter | AtOnly | BranchesWithoutForEach
 
-BranchesWithoutFromList ::= "branches(" BranchListWithoutFromList ")"
-BranchListWithoutFromList ::= AtOnlyBranchList "," AtOnlyBranchList
+BranchesWithoutForEach ::= "branches(" BranchListWithoutForEach ")"
+BranchListWithoutForEach ::= AtOnlyBranchList "," AtOnlyBranchList
 
 Filter ::= Include | Exclude
 Include ::= "include(...)"
