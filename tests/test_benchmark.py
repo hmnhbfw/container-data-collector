@@ -101,6 +101,10 @@ def fs_for_comparison(input_data, shipment_stores, statuses, services):
     def status_producer(n: int) -> str:
         return statuses[n]
 
+    def inserter(c: Counter[Product], internal_id: int, name: str, quantity: int) -> None:
+        product = Product(internal_id, name)
+        c[product] += quantity
+
     def for_loop():
         answer = dict[str, dict[str, Counter[Product]]]()
         for elem in input_data:
@@ -118,30 +122,31 @@ def fs_for_comparison(input_data, shipment_stores, statuses, services):
                     inner[product] += item["quantity"]
         return answer
 
-    def collector():
-        def inserter(c: Counter[Product], internal_id: int, name: str, quantity: int) -> None:
-            product = Product(internal_id, name)
-            c[product] += quantity
+    compiled_collector = GroupCollector.compile(
+        Query.at("orders").for_each().branches(
+            Branch.at("shipmentStore").group(1, factory=store_producer),
+            Branch.at("status").group(2, factory=status_producer),
+            Branch.at("items").for_each().branches(
+                Branch.at("id").element(1),
+                Branch.at("quantity").element(3),
+                Branch.at("offer").at("name").element(2).exclude(any_of=services)
+            )
+        ),
+        inner_factory=Counter[Product],
+        inserter=inserter,
+    )
 
-        collector = GroupCollector.compile(
-            Query.at("orders").for_each().branches(
-                Branch.at("shipmentStore").group(1, factory=store_producer),
-                Branch.at("status").group(2, factory=status_producer),
-                Branch.at("items").for_each().branches(
-                    Branch.at("id").element(1),
-                    Branch.at("quantity").element(3),
-                    Branch.at("offer").at("name").element(2).exclude(any_of=services)
-                )
-            ),
-            inner_factory=Counter[Product],
-            inserter=inserter,
-        )
-        return collector.collect(input_data)
+    def collector():
+        return compiled_collector.collect(input_data)
 
     return {
         for_loop.__name__: for_loop,
         collector.__name__: collector,
     }
+
+
+def test_correctness(fs_for_comparison):
+    assert fs_for_comparison["for_loop"]() == fs_for_comparison["collector"]()
 
 
 def test_for_loop(fs_for_comparison, benchmark):
@@ -150,7 +155,3 @@ def test_for_loop(fs_for_comparison, benchmark):
 
 def test_collector(fs_for_comparison, benchmark):
     benchmark(fs_for_comparison["collector"])
-
-
-def test_correctness(fs_for_comparison):
-    assert fs_for_comparison["for_loop"]() == fs_for_comparison["collector"]()
