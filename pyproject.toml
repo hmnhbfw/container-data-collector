@@ -9,7 +9,7 @@ repository = "https://github.com/hmnhbfw/container-data-collector"
 documentation = "https://github.com/hmnhbfw/container-data-collector#readme"
 keywords = []
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 1 - Planning",
   "Operating System :: OS Independent",
 ]
 packages = [{ include = "container_data_collector", from = "src" }]
